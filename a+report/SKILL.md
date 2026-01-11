@@ -5,10 +5,16 @@ description: 從 GitHub 搜尋指定日期範圍內的 commit，產生 A+ 專案
 
 # A+ 專案工作報告產生器
 
+## 角色
+
+你是一位精通 GitHub 工作流程與技術檔案撰寫的 資深自動化開發工程師。你擅長利用 GitHub MCP 工具精確檢索資料，
+並結合程式邏輯與技術洞察力，將零碎的 Commit 記錄轉化為高品質的專業技術報告。
+
 ## 前置條件
 
 - 需要 GitHub MCP 工具存取權限
 - 需要 document-processing-docx skill 或同等 Word 輸出能力
+- 需要 date range, target authors（缺失需詢問使用者）
 
 ---
 
@@ -25,9 +31,7 @@ description: 從 GitHub 搜尋指定日期範圍內的 commit，產生 A+ 專案
 ```yaml
 # 必要參數
 organization: atayalan
-target_authors:
-  - sealifes
-  - hangli
+target_authors: {target authors}
 
 # 搜尋範圍：列舉的 repositories
 repositories:
@@ -50,28 +54,11 @@ deduplication: 同一 commit SHA 跨多 branch 僅計一次
 
 ---
 
-## STEP 2: 分類規則
+## STEP 2: 輸出目錄結構
 
-```
-分類決策樹：
-
-1. 檢查 repository 名稱
-   ├─ 包含 "edge" → 分類為 edge/
-   ├─ 為 vpp-controller → 分類為 edge/
-   ├─ 為 vpp-arm-buildenv → 分類為 edge/
-   └─ 其他 → 分類為 chorus/
-
-2. 若 PR/commit 同時涉及兩類 repo
-   └─ 歸類為 edge/
-```
-
-輸出目錄結構：
 ```
 output/
-├── chorus/
-│   └── chorus-YYYY-M-D-weekday.docx
-└── edge/
-    └── edge-YYYY-M-D-weekday.docx
+└── aplus-YYYY-M-D-weekday.docx
 ```
 
 ---
@@ -113,7 +100,7 @@ def schedule_report_dates(pr_date: date, count: int = 6) -> list[date]:
 
 ```
 規則優先級：
-1. 同一天只能有一份報告（跨 chorus/edge 也不能重複）
+1. 同一天只能有一份報告（跨 repositories 也不能重複）
 2. 衝突時，後到的 PR 報告日期順延至下一個可用 Wed/Fri
 3. 全域維護一個 occupied_dates 集合避免衝突
 ```
@@ -124,8 +111,8 @@ def schedule_report_dates(pr_date: date, count: int = 6) -> list[date]:
 
 ```yaml
 format: .docx
-filename_pattern: "{category}-{YYYY}-{M}-{D}-{weekday}.docx"
-# 範例: chorus-2025-11-5-wed.docx, edge-2025-11-7-fri.docx
+filename_pattern: "aplus-{YYYY}-{M}-{D}-{weekday}.docx"
+# 範例: aplus-2025-11-5-wed.docx, aplus-2025-11-7-fri.docx
 
 typography:
   font_size: 12pt
@@ -140,7 +127,7 @@ constraints:
 ## STEP 5: 報告內容模板
 
 ```markdown
-# {Category} 工作報告 - {YYYY}-{MM}-{DD}
+# A+工作報告 - {YYYY}-{MM}-{DD}
 
 ## {Issue/PR 編號}: {標題}
 
@@ -181,7 +168,7 @@ constraints:
 ## 範例輸出
 
 ```
-# Chorus 工作報告 - 2025-11-05
+# A+工作報告 - 2025-11-05
 
 ## G1-3261: 移除 Chorus 模式的 ranNode 備份跳過機制
 
