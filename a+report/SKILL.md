@@ -21,7 +21,7 @@ description: 從 GitHub 搜尋指定日期範圍內的 commit，產生 A+ 專案
 ## 執行流程
 
 ```
-[輸入日期範圍] → [GitHub 搜尋] → [報告生成] → [.docx 輸出]
+[輸入日期範圍、目標使用者] → [GitHub 搜尋] → [報告生成] → [.docx 輸出]
 ```
 
 ---
@@ -31,21 +31,10 @@ description: 從 GitHub 搜尋指定日期範圍內的 commit，產生 A+ 專案
 ```yaml
 # 必要參數
 organization: atayalan
-target_authors: {target authors}
+authors: {target authors}
 
 # 搜尋範圍：列舉的 repositories
-repositories:
-  - fgc
-  - chorus-agent
-  - chorus-edge-k3s-installer
-  - chorusLiteInstaller
-  - serviceagent
-  - mgmt-plane
-  - edge-agent
-  - nf-wrapper
-  - vpp-controller
-  - codes
-  - vpp-arm-buildenv
+repositories: all repositories
 
 # Branch 策略
 branch_selection: 每個 repo 取最近更新的 4 個 branches
@@ -69,7 +58,7 @@ output/
 
 | 項目 | 規則 |
 |------|------|
-| 每個 PR 產生報告數 | 6 份 |
+| 每個 PR 產生報告數 | 4 份 |
 | 每份字數 | 約 300 字 |
 | 內容策略 | **擴寫**：延伸技術背景、專有名詞解釋 |
 | 禁止事項 | 大段重複貼上相同文字 |
@@ -77,6 +66,7 @@ output/
 ### 3.2 日期排程演算法
 
 ```python
+# 報告僅允許建立在星期三、星期五
 def schedule_report_dates(pr_date: date, count: int = 6) -> list[date]:
     """
     從 PR 日期後的第一個星期三開始，Wed/Fri 交替遞增
@@ -150,6 +140,7 @@ constraints:
 ### 影響範圍
 {說明此變更對系統行為的影響}
 {如有，說明與其他模組的關聯}
+{此區塊盡可能填滿頁面}
 ```
 
 ---
@@ -158,7 +149,6 @@ constraints:
 
 | 情境 | 處理方式 |
 |------|----------|
-| 日期範圍內 commit 數不足 6 份 | 有幾份產幾份，不虛構 |
 | PR 無有意義的 commit message | 從 diff 內容推斷變更目的 |
 | 同一天多個 PR | 按 commit 時間排序，依序排程 |
 | 搜尋結果為空 | 回報「指定範圍內無符合條件的 commit」 |
