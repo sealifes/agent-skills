@@ -31,17 +31,7 @@ target_authors:
 
 # Search scope: enumerated repositories
 repositories:
-  - fgc
-  - chorus-agent
-  - chorus-edge-k3s-installer
-  - chorusLiteInstaller
-  - serviceagent
-  - mgmt-plane
-  - edge-agent
-  - nf-wrapper
-  - vpp-controller
-  - codes
-  - vpp-arm-buildenv
+  - all repositories
 
 # Branch strategy
 branch_selection: Select 4 most recently updated branches per repo
