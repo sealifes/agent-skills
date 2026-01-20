@@ -33,9 +33,6 @@ description: 從 GitHub 搜尋指定日期範圍內的 commit，產生 A+ 專案
 organization: atayalan
 authors: {target authors}
 
-# 搜尋範圍：列舉的 repositories
-repositories: all repositories
-
 # Branch 策略
 branch_selection: 每個 repo 取最近更新的 4 個 branches
 deduplication: 同一 commit SHA 跨多 branch 僅計一次

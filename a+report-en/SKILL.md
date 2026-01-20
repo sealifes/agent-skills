@@ -1,21 +1,26 @@
 ---
 name: a+report
-description: Search GitHub commits within a date range and generate A+ project work reports (.docx format)
+description: Search for commits within a specified date range on GitHub and generate an A+ project work report (.docx format)
 ---
 
 # A+ Project Work Report Generator
 
+## Role
+
+You are a Senior Automation Development Engineer proficient in GitHub workflows and technical documentation. You excel at using GitHub MCP tools to precisely retrieve data and combining programming logic with technical insights to transform fragmented commit records into high-quality professional technical reports.
+
 ## Prerequisites
 
-- GitHub MCP tool access required
-- document-processing-docx skill or equivalent Word output capability required
+- Access to GitHub MCP tools
+- document-processing-docx skill or equivalent Word output capability
+- Date range, target authors (ask user if missing)
 
 ---
 
-## Execution Pipeline
+## Execution Flow
 
 ```
-[Date Range Input] → [GitHub Search] → [Classification] → [Report Generation] → [.docx Output]
+[Input Date Range, Target Authors] → [GitHub Search] → [Report Generation] → [.docx Output]
 ```
 
 ---
@@ -23,45 +28,22 @@ description: Search GitHub commits within a date range and generate A+ project w
 ## STEP 1: GitHub Search Parameters
 
 ```yaml
-# Required parameters
+# Required Parameters
 organization: atayalan
-target_authors:
-  - sealifes
-  - hangli
+authors: {target authors}
 
-# Search scope: enumerated repositories
-repositories:
-  - all repositories
-
-# Branch strategy
-branch_selection: Select 4 most recently updated branches per repo
-deduplication: Same commit SHA across multiple branches counts as one
+# Branch Strategy
+branch_selection: Take the 4 most recently updated branches per repo
+deduplication: Same commit SHA across multiple branches counts only once
 ```
 
 ---
 
-## STEP 2: Classification Rules
+## STEP 2: Output Directory Structure
 
-```
-Classification Decision Tree:
-
-1. Check repository name
-   ├─ Contains "edge" → classify as edge/
-   ├─ Is vpp-controller → classify as edge/
-   ├─ Is vpp-arm-buildenv → classify as edge/
-   └─ Otherwise → classify as chorus/
-
-2. If PR/commit spans both categories
-   └─ Classify as edge/
-```
-
-Output directory structure:
 ```
 output/
-├── chorus/
-│   └── chorus-YYYY-M-D-weekday.docx
-└── edge/
-    └── edge-YYYY-M-D-weekday.docx
+└── aplus-YYYY-M-D-weekday.docx
 ```
 
 ---
@@ -72,19 +54,21 @@ output/
 
 | Item | Rule |
 |------|------|
-| Reports per PR | 6 |
-| Words per report | ~300 words |
-| Content strategy | **Expand**: Include technical background, terminology explanations |
-| Prohibited | Large blocks of repeated/duplicated text |
+| Reports per PR | 4 **unique** reports |
+| Word Count per Report | Approx. 350 words |
+| Content Strategy | **Elaboration**: Expand on technical background, explain terminology |
+| Forbidden | Large blocks of repeated text |
+| Edge Cases | If PR description lacks material, refer directly to code changes |
 
-### 3.2 Date Scheduling Algorithm
+### 3.2 Scheduling Algorithm
 
 ```python
+# Reports are only allowed on Wednesdays and Fridays
 def schedule_report_dates(pr_date: date, count: int = 6) -> list[date]:
     """
-    Start from the first Wednesday after PR date, alternate Wed/Fri
+    Start from the first Wednesday after the PR date, alternating Wed/Fri
     """
-    # Find first Wednesday after PR date
+    # Find the first Wednesday after PR date
     current = pr_date
     while current.weekday() != 2:  # 2 = Wednesday
         current += timedelta(days=1)
@@ -102,27 +86,27 @@ def schedule_report_dates(pr_date: date, count: int = 6) -> list[date]:
 ### 3.3 Date Conflict Resolution
 
 ```
-Priority rules:
-1. Only one report per day (across both chorus/edge categories)
-2. On conflict, defer the later PR's report dates to next available Wed/Fri
-3. Maintain a global occupied_dates set to prevent collisions
+Priority Rules:
+1. Only one report per day (cannot repeat across repositories)
+2. In case of conflict, the later PR report date is postponed to the next available Wed/Fri
+3. Maintain a global occupied_dates set to avoid conflicts
 ```
 
 ---
 
-## STEP 4: Word Document Format Specification
+## STEP 4: Word Document Format Specifications
 
 ```yaml
 format: .docx
-filename_pattern: "{category}-{YYYY}-{M}-{D}-{weekday}.docx"
-# Examples: chorus-2025-11-5-wed.docx, edge-2025-11-7-fri.docx
+filename_pattern: "aplus-{YYYY}-{M}-{D}-{weekday}.docx"
+# Example: aplus-2025-11-5-wed.docx, aplus-2025-11-7-fri.docx
 
 typography:
-  font_size: 11pt
+  font_size: 12pt
   line_spacing: 1
 
 constraints:
-  max_pages: 1  # Trim content if exceeded
+  max_pages: 1  # Summarize content if exceeding
 ```
 
 ---
@@ -130,7 +114,7 @@ constraints:
 ## STEP 5: Report Content Template
 
 ```markdown
-# {Category} Work Report - {YYYY}-{MM}-{DD}
+# A+ Work Report - {YYYY}-{MM}-{DD}
 
 ## {Issue/PR Number}: {Title}
 
@@ -140,55 +124,55 @@ constraints:
 
 ### Change Summary
 {2-3 sentences describing the purpose and background of this change}
-{May include extended technical concepts such as protocols, architectural design rationale}
+{Can extend to explain related technical concepts, such as protocols, architectural design philosophy, etc.}
 
 ### Technical Details
-Files modified:
-1. `{file_path_1}` - {Brief description of file's role}
-2. `{file_path_2}` - {Brief description of file's role}
+Modifications involve the following files:
+1. `{file_path_1}` - {Brief description of the file's role}
+2. `{file_path_2}` - {Brief description of the file's role}
 
-Total: {N} lines changed ({added} additions, {deleted} deletions).
-{Describe the code-level change logic}
+Total code changes: {N} lines ({added} added, {deleted} deleted).
+{Describe the logic of the code changes}
 
-### Impact Scope
+### Scope of Impact
 {Explain the impact of this change on system behavior}
-{If applicable, describe relationships with other modules}
+{If applicable, explain the relationship with other modules}
+{Fill the page as much as possible, expanding on related knowledge}
 ```
 
 ---
 
 ## Edge Case Handling
 
-| Scenario | Handling |
-|----------|----------|
-| Fewer than 6 commits in date range | Generate only as many reports as commits exist; do not fabricate |
+| Scenario | Handling Method |
+|----------|-----------------|
 | PR has no meaningful commit message | Infer change purpose from diff content |
-| Multiple PRs on same day | Sort by commit timestamp, schedule sequentially |
-| Empty search results | Report "No commits matching criteria found in specified range" |
+| Multiple PRs on the same day | Sort by commit time, schedule sequentially |
+| Empty search results | Report "No matching commits found within the specified range" |
 
 ---
 
 ## Example Output
 
 ```
-# Chorus Work Report - 2025-11-05
+# A+ Work Report - 2025-11-05
 
-## G1-3261: Remove ranNode Backup Skip Mechanism in Chorus Mode
+## G1-3261: Remove ranNode backup skip mechanism in Chorus mode
 
 ### Project Information
 - **Repository**: fgc
 - **Date**: 2025-11-5-Wed
 
 ### Change Summary
-This commit introduces an important behavioral adjustment to the AMF (Access and Mobility Management Function) controller. AMF is a critical network function in the 5G core network responsible for managing UE (User Equipment) access and mobility. In the previous implementation, when the system operated in Chorus mode, ranNode (Radio Access Network node) backup operations were skipped. This change removes that skip logic, ensuring the ranNode backup mechanism in Chorus mode operates consistently with standard mode.
+This commit introduces important behavior adjustments to the AMF (Access and Mobility Management Function) controller. AMF is a key network element in the 5G core network responsible for managing user equipment access and mobility. In the previous implementation, when the system operated in Chorus mode, the backup operation for ranNode (Radio Access Network Node) was skipped. This modification removes this skipping logic, aligning the ranNode backup mechanism in Chorus mode with the standard mode.
 
 ### Technical Details
-Files modified:
-1. `apps/amfctrl/amf/wps_amfRanDb.cpp` - RAN database management module, maintains base station connection state
-2. `apps/amfctrl/amfToDb/src/wps_amfToDb_redis.cpp` - AMF to Redis sync module, handles state persistence
+The modification involves two core files:
+1. `apps/amfctrl/amf/wps_amfRanDb.cpp` - RAN database management module, responsible for maintaining base station connection status.
+2. `apps/amfctrl/amfToDb/src/wps_amfToDb_redis.cpp` - AMF to Redis database synchronization module, handling state persistence.
 
-Total: 27 lines changed (10 additions, 17 deletions). By removing conditional branches, this change unifies the data backup strategy across different operational modes, reducing code complexity and improving maintainability.
+Total code changes: 27 lines (10 added, 17 deleted). By removing the conditional branch, the data backup strategy across different operating modes is unified, reducing code complexity and improving maintainability.
 
-### Impact Scope
-This change ensures RAN node states are properly backed up to Redis in Chorus deployment environments, enhancing system fault tolerance. When AMF restarts or fails over, complete ranNode connection information can be recovered from Redis, preventing base stations from needing to re-register.
+### Scope of Impact
+This change ensures that RAN node states in Chorus deployment environments are correctly backed up to Redis, enhancing system fault tolerance. In the event of an AMF restart or failover, complete ranNode connection information can be recovered from Redis, avoiding the need for base stations to re-register.
 ```
